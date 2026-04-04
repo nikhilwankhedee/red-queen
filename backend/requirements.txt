@@ -5,8 +5,11 @@ pillow
 torch
 torchvision
 ultralytics
-pytorch-grad-cam
 scikit-learn
 torchmetrics
 python-multipart
 python-dotenv
+pydantic
+bcrypt
+python-jose[cryptography]
+email-validator

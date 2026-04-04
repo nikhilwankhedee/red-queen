@@ -70,23 +70,26 @@ class ShipsNearbyRequest(BaseModel):
     lon: float
 
 
-# ==================== AI Analysis Schemas ====================
+# ==================== AI Analysis Schemas (Rule-Based) ====================
 
 class AIDetectedObject(BaseModel):
-    """Schema for detected objects in AI analysis request."""
+    """Schema for detected objects in analysis request."""
     class_name: str
     confidence: float
 
 
 class AIAnalysisRequest(BaseModel):
-    """Schema for AI analysis request."""
+    """Schema for analysis request."""
     manifest: str
     detected_objects: List[AIDetectedObject]
 
 
 class AIAnalysisResponse(BaseModel):
-    """Schema for AI analysis response."""
-    analysis: str
+    """Schema for rule-based analysis response."""
+    inspection_report: str
+    risk_score: float
+    risk_level: str
+    flag_reason: str
 
 
 # ==================== Existing Inspection Schemas ====================
@@ -115,13 +118,12 @@ class InspectionResponse(BaseModel):
     annotated_image: str = Field(..., description="Base64 encoded annotated image")
     detections: List[DetectedObject]
     risk_score: float
-    risk_level: str = Field(..., description="Final reconciled risk level (highest of rule engine and AI)")
+    risk_level: str = Field(..., description="Risk level from rule-based judge")
     flag_reason: str
     manifest_mismatch: ManifestMismatch
-    ai_analysis: str = Field(default="", description="AI-generated inspection analysis from Gemini")
+    inspection_report: str = Field(default="", description="Rule-based inspection report")
     # Risk breakdown for transparency
     rule_engine_risk: str = Field(default="", description="Risk level from rule-based engine")
-    ai_risk: str = Field(default="", description="Risk level extracted from AI analysis")
 
 
 class InspectionRecord(BaseModel):
@@ -134,9 +136,8 @@ class InspectionRecord(BaseModel):
     objects_detected: List
     manifest_text: str
     mismatch_flag: bool
-    ai_analysis: str = ""
+    inspection_report: str = ""
     rule_engine_risk: str = ""
-    ai_risk: str = ""
 
 
 class InspectionHistoryItem(BaseModel):
@@ -145,4 +146,4 @@ class InspectionHistoryItem(BaseModel):
     timestamp: str
     risk_level: str
     detected_objects: List[str]
-    analysis: str
+    inspection_report: str
