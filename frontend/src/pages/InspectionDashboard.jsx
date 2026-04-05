@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { inspectCargo, analyzeWithAI, generateReport } from '../services/inspection';
+import { inspectCargo, analyzeWithAI } from '../services/inspection';
 
 // Helper to convert any error to a string message - ALWAYS returns a string
 const getErrorMessage = (err) => {
@@ -336,11 +336,28 @@ function CargoViewer({ image, detections, isAnalyzing, analysisStep }) {
 }
 
 // AI Intelligence Panel Component
-function IntelligencePanel({ result, isAnalyzing, onGenerateReport, onReset, error }) {
+function IntelligencePanel({ result, isAnalyzing, onReset, error }) {
   // Helper to get AI analysis text from result
   const getAIAnalysisText = (result) => {
     if (!result) return '';
-    // Check if ai_analysis is a string
+
+    // Check for inspection_report first (primary field from backend)
+    if (result.inspection_report && typeof result.inspection_report === 'string') {
+      return result.inspection_report;
+    }
+
+    // Check for judge analysis (highest priority fallback)
+    if (result.judge_analysis) {
+      if (typeof result.judge_analysis === 'string') return result.judge_analysis;
+      if (result.judge_analysis.analysis) return result.judge_analysis.analysis;
+      if (result.judge_analysis.text) return result.judge_analysis.text;
+      if (result.judge_analysis.reasoning) return result.judge_analysis.reasoning;
+      if (typeof result.judge_analysis === 'object') {
+        return JSON.stringify(result.judge_analysis, null, 2);
+      }
+    }
+
+    // Check if ai_analysis is a string (backward compatibility)
     if (typeof result.ai_analysis === 'string') return result.ai_analysis;
     // Check if it's an object with analysis field (from /api/ai/analyze)
     if (result.ai_analysis?.analysis) return result.ai_analysis.analysis;
@@ -485,8 +502,27 @@ function IntelligencePanel({ result, isAnalyzing, onGenerateReport, onReset, err
 
             {/* AI Analysis */}
             <div>
-              <div className="text-[10px] uppercase text-text-muted tracking-wider mb-3">AI Analysis</div>
+              <div className="text-[10px] uppercase text-text-muted tracking-wider mb-3">
+                {result.inspection_report ? 'Inspection Report' : 'AI Analysis'}
+              </div>
               <div className="bg-bg-card border border-border-primary rounded-lg p-4">
+                {/* Judge Analysis - if available */}
+                {result.judge_analysis && (
+                  <div className="mb-3 pb-3 border-b border-border-primary">
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="w-4 h-4 text-accent-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 14l-3-9m-3 9l3-1m-3 1l-3-9a5.002 5.002 0 006.001 0" />
+                      </svg>
+                      <span className="text-xs font-semibold text-accent-primary uppercase">Judge Analysis</span>
+                    </div>
+                    <p className="text-xs text-text-secondary leading-relaxed whitespace-pre-wrap">
+                      {typeof result.judge_analysis === 'string'
+                        ? result.judge_analysis
+                        : result.judge_analysis.analysis || result.judge_analysis.text || result.judge_analysis.reasoning || JSON.stringify(result.judge_analysis, null, 2)}
+                    </p>
+                  </div>
+                )}
+                {/* Standard AI Analysis */}
                 <p className="text-xs text-text-secondary leading-relaxed whitespace-pre-wrap">{getAIAnalysisText(result)}</p>
               </div>
             </div>
@@ -504,16 +540,7 @@ function IntelligencePanel({ result, isAnalyzing, onGenerateReport, onReset, err
 
       {/* Actions */}
       {result && (
-        <div className="p-4 border-t border-border-primary space-y-3">
-          <button
-            onClick={onGenerateReport}
-            className="w-full py-2.5 bg-accent-primary hover:bg-accent-dark text-white text-sm font-medium rounded border border-accent-dark/50 transition-all flex items-center justify-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Generate Report
-          </button>
+        <div className="p-4 border-t border-border-primary">
           <button
             onClick={onReset}
             className="w-full py-2.5 bg-bg-cardAlt hover:bg-[#1a1a1a] text-text-secondary text-sm font-medium rounded border border-border-primary transition-all flex items-center justify-center gap-2"
@@ -576,11 +603,13 @@ export default function InspectionDashboard() {
         manifest
       );
 
-      // Combine results - ensure ai_analysis is properly extracted
+      // Combine results - ensure ai_analysis and judge_analysis are properly extracted
       const fullResult = {
         ...inspectionData,
         // The /api/ai/analyze endpoint returns {analysis: string}
         ai_analysis: analysisResult.analysis || analysisResult.ai_analysis || inspectionData.ai_analysis || '',
+        // Judge analysis from backend (if available)
+        judge_analysis: analysisResult.judge_analysis || inspectionData.judge_analysis || null,
       };
 
       setInspectionResult(fullResult);
@@ -591,23 +620,6 @@ export default function InspectionDashboard() {
       setIsUploading(false);
       setIsAnalyzing(false);
       setAnalysisStep('');
-    }
-  };
-
-  const handleGenerateReport = async () => {
-    if (!inspectionResult) return;
-
-    setIsAnalyzing(true);
-    setErrorSafe(null);
-
-    try {
-      const report = await generateReport(inspectionResult);
-      alert('Report generated successfully! Report ID: ' + (report.report_id || report.id || 'N/A'));
-    } catch (err) {
-      console.error('Report generation failed:', err);
-      setErrorSafe(err);
-    } finally {
-      setIsAnalyzing(false);
     }
   };
 
@@ -645,7 +657,6 @@ export default function InspectionDashboard() {
       <IntelligencePanel
         result={inspectionResult}
         isAnalyzing={isAnalyzing}
-        onGenerateReport={handleGenerateReport}
         onReset={handleReset}
         error={error}
       />

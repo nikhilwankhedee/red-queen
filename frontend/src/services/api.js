@@ -138,8 +138,8 @@ export async function fetchInspectionById(inspectionId) {
 
 // ==================== REPORTS ====================
 
-export async function generateReport(inspectionData) {
-  const response = await api.post('/report/generate', inspectionData);
+export async function generateReport(caseId) {
+  const response = await api.post('/report/generate', { case_id: caseId });
   return response.data;
 }
 

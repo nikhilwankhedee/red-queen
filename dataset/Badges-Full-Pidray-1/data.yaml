@@ -1,0 +1,23 @@
+names:
+- Baton
+- Bullet
+- Gun
+- Hammer
+- HandCuffs
+- Knife
+- Lighter
+- Pliers
+- Powerbank
+- Scissors
+- Sprayer
+- Wrench
+nc: 12
+roboflow:
+  license: MIT
+  project: badges-full-pidray
+  url: https://universe.roboflow.com/nagy-mfvph/badges-full-pidray/dataset/1
+  version: 1
+  workspace: nagy-mfvph
+test: ../test/images
+train: ../train/images
+val: ../valid/images

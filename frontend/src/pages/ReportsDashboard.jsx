@@ -108,11 +108,13 @@ function ReportViewer({ report, onClose }) {
           </div>
 
           {/* AI Analysis */}
-          {report.ai_analysis && (
+          {(report.inspection_report || report.ai_analysis) && (
             <div className="mb-6">
               <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-3">AI Analysis</h4>
               <div className="border border-border-primary rounded-lg p-4 bg-bg-card">
-                <p className="text-sm text-text-secondary leading-relaxed">{report.ai_analysis}</p>
+                <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-wrap">
+                  {report.inspection_report || report.ai_analysis}
+                </p>
               </div>
             </div>
           )}

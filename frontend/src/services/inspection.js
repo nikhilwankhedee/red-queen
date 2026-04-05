@@ -153,12 +153,12 @@ export async function getInspectionById(inspectionId) {
 
 /**
  * Generate report from inspection data
- * @param {object} inspectionData - Complete inspection result
+ * @param {string} caseId - Inspection case ID
  * @returns {Promise<{report_id: string, download_url: string, report_data: object}>}
  */
-export async function generateReport(inspectionData) {
+export async function generateReport(caseId) {
   try {
-    const response = await api.post('/report/generate', inspectionData);
+    const response = await api.post('/report/generate', { case_id: caseId });
     return response.data;
   } catch (error) {
     const message = error.response?.data?.detail || error.response?.data?.message || 'Report generation failed';
