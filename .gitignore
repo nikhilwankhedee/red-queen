@@ -51,3 +51,7 @@ Thumbs.db
 coverage/
 .coverage
 htmlcov/
+
+# datasets
+datasets/
+Badges-Full-Pidray-1
